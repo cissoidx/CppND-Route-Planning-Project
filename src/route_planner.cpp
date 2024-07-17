@@ -38,7 +38,7 @@ void RoutePlanner::AddNeighbors(RouteModel::Node *current_node) {
     for (auto* node : current_node->neighbors) {
         node->parent = current_node;
         node->h_value = CalculateHValue(node);
-        node->g_value = node->distance(*current_node);
+        node->g_value = node->distance(*current_node) + current_node->g_value;
         node->visited = true;
         open_list.push_back(node);
     }
@@ -54,6 +54,15 @@ void RoutePlanner::AddNeighbors(RouteModel::Node *current_node) {
 // - Return the pointer.
 
 RouteModel::Node *RoutePlanner::NextNode() {
+    auto compare = [](const RouteModel::Node* a, const RouteModel::Node* b){
+        float f1 = a->h_value + a->g_value; // f1 = g1 + h1
+        float f2 = b->h_value + b->g_value; // f2 = g2 + h2
+        return f1 > f2;
+    };
+    std::sort(open_list.begin(), open_list.end(), compare);
+    RouteModel::Node* lowest_p = open_list.back();
+    open_list.pop_back();
+    return lowest_p;
 
 }
 
@@ -98,5 +107,18 @@ void RoutePlanner::AStarSearch() {
     RouteModel::Node *current_node = nullptr;
 
     // TODO: Implement your solution here.
+    start_node->visited = true;
+    open_list.push_back(start_node);
+
+    while (open_list.size() > 0){
+        current_node = NextNode();
+        if (current_node==end_node){
+            m_Model.path = ConstructFinalPath(end_node);
+            return;
+        }
+        AddNeighbors(current_node);
+
+    }
+    std::cout << "No path found!" << "\n";
 
 }
